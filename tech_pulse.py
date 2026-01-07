@@ -7,32 +7,28 @@ import os
 from datetime import datetime
 import urllib.parse
 
-# 1. صناعة ملفات التحقق والسيت ماب أوتوماتيكياً
+# 1. صناعة ملفات التحقق والسيت ماب (للسيو وجوجل)
 def generate_static_files():
     with open("google8c04de4f0fa47f61.html", "w") as f:
         f.write("google-site-verification: google8c04de4f0fa47f61.html")
-    
-    sitemap_content = f"""<?xml version="1.0" encoding="UTF-8"?>
+    sitemap = f"""<?xml version="1.0" encoding="UTF-8"?>
     <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
         <url><loc>https://global.streamlit.app/</loc><priority>1.0</priority></url>
     </urlset>"""
-    with open("sitemap.xml", "w") as f:
-        f.write(sitemap_content)
+    with open("sitemap.xml", "w") as f: f.write(sitemap)
 
 generate_static_files()
 
-# معالجة طلبات جوجل (الخريطة والتحقق)
+# معالجة طلبات جوجل
 if st.query_params.get("sitemap.xml"):
-    with open("sitemap.xml", "r") as f: st.text(f.read())
-    st.stop()
+    with open("sitemap.xml", "r") as f: st.text(f.read()); st.stop()
 if "google8c04de4f0fa47f61" in str(st.query_params):
-    st.write("google-site-verification: google8c04de4f0fa47f61.html")
-    st.stop()
+    st.write("google-site-verification: google8c04de4f0fa47f61.html"); st.stop()
 
-# 2. إعدادات الصفحة والسيو
+# 2. إعدادات الصفحة
 st.set_page_config(page_title="TechPulse AI | Market Intelligence", page_icon="⚡", layout="wide")
 
-# 3. الستايل النيون + ستايل أزرار الشير (CSS)
+# 3. الستايل النيون وأزرار الشير
 st.markdown("""
     <style>
     .stApp { background-color: #050505; color: #ffffff; }
@@ -40,24 +36,34 @@ st.markdown("""
     .news-card { background: #111111; padding: 20px; border-radius: 15px; border: 1px solid #1f2937; margin-bottom: 20px; }
     .share-btn {
         display: inline-flex; align-items: center; background: #1f2937; color: #00CCFF;
-        padding: 5px 12px; border-radius: 8px; text-decoration: none; font-size: 13px; transition: 0.3s;
+        padding: 6px 15px; border-radius: 8px; text-decoration: none; font-size: 13px; margin-right: 10px; transition: 0.3s;
     }
     .share-btn:hover { background: #00CCFF; color: #000; }
-    .ad-container { text-align: center; margin: 20px 0; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 10px; }
+    .ad-slot { text-align: center; margin: 20px 0; overflow: hidden; }
     </style>
 """, unsafe_allow_html=True)
 
-# 4. مكان إعلان Adsterra العلوي (Banner 728x90 أو Native) - CPM عالي هنا
-st.markdown('<div class="ad-container">', unsafe_allow_html=True)
-st.markdown("", unsafe_allow_html=True)
+# 4. إعلان Adsterra العلوي (Header)
+st.markdown('<div class="ad-slot">', unsafe_allow_html=True)
 components.html("""
-    <div style="color:#444; font-size:12px; border:1px dashed #444; padding:10px;">Premium Partner Ad Space</div>
-""", height=90)
+    <div style="display: flex; justify-content: center;">
+        <script type="text/javascript">
+            atOptions = {
+                'key' : '5f66cec17e51208142b62c4800c4705d',
+                'format' : 'iframe',
+                'height' : 90,
+                'width' : 728,
+                'params' : {}
+            };
+        </script>
+        <script type="text/javascript" src="https://fugitivedepart.com/5f66cec17e51208142b62c4800c4705d/invoke.js"></script>
+    </div>
+""", height=100)
 st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown('<div class="main-title">TECH PULSE AI ⚡</div>', unsafe_allow_html=True)
 
-# 5. دوال جلب الأخبار والذكاء الاصطناعي
+# 5. دوال جلب البيانات
 def fetch_tech_news():
     try:
         api_key = st.secrets["NEWS_API_KEY"]
@@ -71,21 +77,21 @@ def get_ai_insight(title, context):
         client = Groq(api_key=st.secrets["GROQ_API_KEY"])
         res = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
-            messages=[{"role": "user", "content": f"Analyze: {title}. Verdict and impact?"}]
+            messages=[{"role": "user", "content": f"Analyze: {title}. Impact on US tech market?"}]
         )
         return res.choices[0].message.content
-    except: return "AI Engine processing..."
+    except: return "AI Insight unavailable."
 
 articles = fetch_tech_news()
 
-# 6. عداد مشاعر السوق
+# 6. عداد المشاعر (Sentiment)
 if articles:
     all_titles = " ".join([a['title'] for a in articles])
     score = TextBlob(all_titles).sentiment.polarity
     mood = "🚀 BULLISH" if score > 0.1 else "⚠️ BEARISH" if score < -0.1 else "⚖️ NEUTRAL"
-    st.markdown(f"<h3 style='text-align:center;'>Market Sentiment: <span style='color:#00CCFF;'>{mood}</span></h3>", unsafe_allow_html=True)
+    st.markdown(f"<h3 style='text-align:center;'>Sentiment Score: {mood}</h3>", unsafe_allow_html=True)
 
-# 7. عرض الأخبار + أزرار الشير
+# 7. عرض الأخبار
 if articles:
     cols = st.columns(2)
     for i, art in enumerate(articles):
@@ -94,35 +100,22 @@ if articles:
             if art.get('urlToImage'): st.image(art['urlToImage'], use_container_width=True)
             st.subheader(art['title'])
             
-            # بوتون الشير (WhatsApp & Twitter)
-            share_text = urllib.parse.quote(f"Check this AI Analysis: {art['title']} - https://global.streamlit.app")
-            whatsapp_url = f"https://api.whatsapp.com/send?text={share_text}"
-            twitter_url = f"https://twitter.com/intent/tweet?text={share_text}"
-            
+            # أزرار الشير
+            share_text = urllib.parse.quote(f"Breaking News: {art['title']} via TechPulse AI")
             st.markdown(f"""
-                <a href="{whatsapp_url}" target="_blank" class="share-btn">🟢 Share on WhatsApp</a>
-                <a href="{twitter_url}" target="_blank" class="share-btn">🔵 Tweet</a>
+                <a href="https://api.whatsapp.com/send?text={share_text}" target="_blank" class="share-btn">WhatsApp</a>
+                <a href="https://twitter.com/intent/tweet?text={share_text}" target="_blank" class="share-btn">Twitter</a>
             """, unsafe_allow_html=True)
             
-            if st.button(f"🧠 ANALYZE IMPACT", key=f"btn_{i}"):
-                with st.spinner('AI Thinking...'):
-                    insight = get_ai_insight(art['title'], art['description'])
-                    st.info(insight)
+            if st.button(f"🧠 AI ANALYSIS", key=f"btn_{i}"):
+                with st.spinner('AI analyzing...'):
+                    st.info(get_ai_insight(art['title'], art['description']))
             st.markdown('</div>', unsafe_allow_html=True)
             
-            # إعلان Adsterra وسط المقالات (Native Ad) - أحسن CPM
-            if i == 1:
-                 st.markdown('<div class="ad-container">', unsafe_allow_html=True)
-                 components.html("""<div style='color:#333;'>Sponsored Content</div>""", height=250)
-                 st.markdown('</div>', unsafe_allow_html=True)
+            # تكرار الإعلان تحت الخبر الثالث (اختياري لرفع الأرباح)
+            if i == 2:
+                st.markdown('<div class="ad-slot">', unsafe_allow_html=True)
+                components.html('<script type="text/javascript" src="https://fugitivedepart.com/5f66cec17e51208142b62c4800c4705d/invoke.js"></script>', height=100)
+                st.markdown('</div>', unsafe_allow_html=True)
 
-# 8. Sidebar لإعلانات الـ Social Bar (Adsterra)
-with st.sidebar:
-    st.markdown("### 📊 Market Stats")
-    st.write("Target: US Global")
-    st.markdown("---")
-    # مكان إعلان Social Bar (Adsterra) - كيجيب نقرات خيالية
-    st.markdown("📢 **Recommended for you**")
-    components.html("""<div style='background:#111; height:100px;'></div>""", height=120)
-
-st.markdown("<center>© 2026 TechPulse Intelligence</center>", unsafe_allow_html=True)
+st.markdown("<center>© 2026 TechPulse Global</center>", unsafe_allow_html=True)
