@@ -7,36 +7,43 @@ import os
 from datetime import datetime
 import urllib.parse
 
-# 1. نظام التحقق والسيت ماب (للسيو وجوجل)
-def generate_static_files():
-    # ملف التحقق القديم (للاحتياط)
-    with open("google8c04de4f0fa47f61.html", "w") as f:
-        f.write("google-site-verification: google8c04de4f0fa47f61.html")
-    # ملف الـ Sitemap
+# ==========================================
+# 1. حل مشكلة جوجل (Google Verification System)
+# ==========================================
+# هاد الجزء كيجاوب جوجل فالمسار اللي كيبغي باش يثبت الملكية
+query_params = st.query_params
+if "google8c04de4f0fa47f61" in str(query_params):
+    st.write("google-site-verification: google8c04de4f0fa47f61.html")
+    st.stop()
+
+if "sitemap.xml" in str(query_params):
     sitemap = f"""<?xml version="1.0" encoding="UTF-8"?>
     <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
         <url><loc>https://global.streamlit.app/</loc><priority>1.0</priority></url>
     </urlset>"""
-    with open("sitemap.xml", "w") as f: f.write(sitemap)
+    st.text(sitemap)
+    st.stop()
 
-generate_static_files()
+# صناعة الملفات فالسيرفر كدعم إضافي
+with open("google8c04de4f0fa47f61.html", "w") as f:
+    f.write("google-site-verification: google8c04de4f0fa47f61.html")
 
-# معالجة طلبات جوجل
-if st.query_params.get("sitemap.xml"):
-    with open("sitemap.xml", "r") as f: st.text(f.read()); st.stop()
-
+# ==========================================
 # 2. إعدادات الصفحة والسيو (SEO)
+# ==========================================
 st.set_page_config(page_title="TechPulse AI | Market Intelligence", page_icon="⚡", layout="wide")
 
-# زراعة كود جوجل الجديد اللي عطيتيني (HTML Tag)
+# زراعة كود الـ Meta Tag اللي عطيتيني (أهم خطوة لجوجل)
 st.markdown("""
     <head>
         <meta name="google-site-verification" content="Zx7FhZjS-T4dZqBjfiCy-ejzeh779QxVNByWsTRDmNc" />
-        <meta name="description" content="AI-Powered Market Intelligence & Tech Insights.">
+        <meta name="description" content="Strategic AI analysis of US tech markets and global trends.">
     </head>
 """, unsafe_allow_html=True)
 
-# 3. الستايل النيون
+# ==========================================
+# 3. الستايل النيون (The UI Design)
+# ==========================================
 st.markdown("""
     <style>
     .stApp { background-color: #050505; color: #ffffff; }
@@ -52,7 +59,9 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+# ==========================================
 # 4. إعلان Adsterra العلوي (Header)
+# ==========================================
 st.markdown('<div class="ad-slot">', unsafe_allow_html=True)
 components.html("""
     <div style="display: flex; justify-content: center;">
@@ -64,7 +73,9 @@ components.html("""
 """, height=100)
 st.markdown('</div>', unsafe_allow_html=True)
 
-# 5. دوال جلب البيانات
+# ==========================================
+# 5. منطق البيانات والذكاء الاصطناعي
+# ==========================================
 def fetch_tech_news():
     try:
         api_key = st.secrets["NEWS_API_KEY"]
@@ -78,30 +89,40 @@ def get_ai_insight(title, context):
         client = Groq(api_key=st.secrets["GROQ_API_KEY"])
         res = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
-            messages=[{"role": "user", "content": f"Expert brief: {title}. Context: {context}."}]
+            messages=[{"role": "user", "content": f"Briefly analyze as Wall Street expert: {title}. Context: {context}."}]
         )
         return res.choices[0].message.content
-    except: return "AI Engine offline."
+    except: return "AI Insight unavailable at the moment."
 
 articles = fetch_tech_news()
 
-# 6. الـ Sidebar
+# ==========================================
+# 6. الـ Sidebar (قسم التوقعات الذكية)
+# ==========================================
 with st.sidebar:
     st.markdown("""
         <div style="background: linear-gradient(45deg, #00CCFF, #0055ff); padding: 15px; border-radius: 15px; text-align: center; margin-bottom: 20px;">
             <h3 style="color: white; margin: 0;">🔥 AI HOT PICKS</h3>
+            <p style="font-size: 10px; color: #eee;">Based on Real-time Sentiment</p>
         </div>
     """, unsafe_allow_html=True)
-    st.info("📈 **Trending:** AI Semiconductors")
-    st.success("💎 **Watch:** NVIDIA (NVDA)")
+    
+    if articles:
+        st.info("📈 **Trending:** AI Semiconductors")
+        st.success("💎 **Watch:** NVIDIA (NVDA)")
+        st.warning("🚀 **Growth:** Quantum Computing")
+    
     st.markdown("---")
-    st.markdown("📢 **Sponsored**")
-    components.html("""<div style='background:#111; height:100px;'></div>""", height=120)
+    st.markdown("📢 **Sponsored Intel**")
+    components.html("""<div style='background:#111; height:100px; border:1px solid #333;'></div>""", height=120)
 
-# 7. المحتوى الرئيسي
+# ==========================================
+# 7. عرض المحتوى الرئيسي
+# ==========================================
 st.markdown('<div class="main-title">TECH PULSE AI ⚡</div>', unsafe_allow_html=True)
 
 if articles:
+    # عداد مشاعر السوق (البار الزرقاء)
     all_titles = " ".join([a['title'] for a in articles])
     score = TextBlob(all_titles).sentiment.polarity
     st.markdown('<div class="sentiment-box">', unsafe_allow_html=True)
@@ -111,14 +132,17 @@ if articles:
     st.progress(min(max((score + 1) / 2, 0.0), 1.0))
     st.markdown('</div>', unsafe_allow_html=True)
 
+    # عرض أخبار التكنولوجيا
     cols = st.columns(2)
     for i, art in enumerate(articles):
         with cols[i % 2]:
             st.markdown('<div class="news-card">', unsafe_allow_html=True)
-            if art.get('urlToImage'): st.image(art['urlToImage'], use_container_width=True)
+            if art.get('urlToImage'):
+                st.image(art['urlToImage'], use_container_width=True)
             st.subheader(art['title'])
             
-            share_text = urllib.parse.quote(f"News: {art['title']}")
+            # أزرار الشير (WhatsApp & Twitter)
+            share_text = urllib.parse.quote(f"Check this AI Analysis: {art['title']}")
             st.markdown(f"""
                 <div style="margin-bottom:12px;">
                     <a href="https://api.whatsapp.com/send?text={share_text}" target="_blank" class="share-btn">WhatsApp 🟢</a>
@@ -127,8 +151,10 @@ if articles:
             """, unsafe_allow_html=True)
             
             if st.button(f"🧠 AI VERDICT", key=f"btn_{i}"):
-                with st.spinner('Analysing...'):
+                with st.spinner('Thinking...'):
                     st.info(get_ai_insight(art['title'], art['description']))
+            
+            st.markdown(f"[Source Intel]({art['url']})")
             st.markdown('</div>', unsafe_allow_html=True)
 
-st.markdown("<center style='color:#444;'>© 2026 TechPulse Global</center>", unsafe_allow_html=True)
+st.markdown("<center style='color:#444; margin-top:50px;'>© 2026 TechPulse Global | USA Tech Intelligence</center>", unsafe_allow_html=True)
