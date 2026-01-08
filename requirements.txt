@@ -1,5 +1,7 @@
-streamlit
-groq
-requests
-textblob
-tweepy
+streamlit>=1.30.0
+requests>=2.31.0
+groq>=0.0.10
+supabase>=2.0.0
+urllib3>=2.0.4
+textblob>=0.17.1
+tweepy>=4.28.0
