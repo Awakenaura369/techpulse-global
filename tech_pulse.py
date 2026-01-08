@@ -1,10 +1,10 @@
 import streamlit as st
 import requests
 from groq import Groq
-import tweepy
+import urllib.parse
 import streamlit.components.v1 as components
 
-# --- 1. SEO & Core Settings ---
+# --- 1. إعدادات SEO (ما نسينا والو) ---
 SITE_URL = "https://techpulse-global.streamlit.app/"
 params = st.query_params
 
@@ -13,39 +13,27 @@ if "google8c04de4f0fa47f61" in str(params):
 if "robots.txt" in str(params):
     st.text("User-agent: *\nDisallow: /_stcore/\nSitemap: " + SITE_URL + "sitemap.xml"); st.stop()
 
-# --- 2. Advanced UI Style (The Pro Look) ---
+# --- 2. الستايل الاحترافي (نفس اللي عجبك) ---
 st.set_page_config(page_title="TechPulse AI | Pro Intel", layout="wide", page_icon="⚡")
 
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Orbitron:wght@900&display=swap');
-    
     .stApp { background-color: #010409; color: #E6EDF3; font-family: 'Inter', sans-serif; }
-    
     .main-header { font-family: 'Orbitron', sans-serif; text-align: center; padding: 20px; }
     .main-header h1 { color: #58A6FF; font-size: 48px; margin-bottom: 0; text-shadow: 0 0 15px rgba(88, 166, 255, 0.5); }
-    .main-header p { color: #8B949E; font-size: 14px; letter-spacing: 2px; }
-    
     .market-mood { background: #0D1117; border-radius: 15px; padding: 20px; border: 1px solid #30363D; margin-bottom: 30px; }
-    .mood-title { font-size: 24px; font-weight: bold; }
-    .mood-bullish { color: #3FB950; }
-    
-    .news-card { background: #0D1117; border: 1px solid #30363D; border-radius: 12px; padding: 0; margin-bottom: 25px; overflow: hidden; }
+    .mood-bullish { color: #3FB950; font-weight: bold; }
+    .news-card { background: #0D1117; border: 1px solid #30363D; border-radius: 12px; margin-bottom: 25px; overflow: hidden; }
     .news-content { padding: 20px; }
-    .news-title { font-size: 22px; font-weight: bold; color: #F0F6FC; margin-bottom: 10px; line-height: 1.3; }
-    .news-meta { color: #8B949E; font-size: 13px; margin-bottom: 15px; }
-    
+    .news-title { font-size: 22px; font-weight: bold; color: #F0F6FC; margin-bottom: 10px; }
     .risk-alert { display: inline-block; background: rgba(248, 81, 73, 0.1); color: #F85149; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; border: 1px solid #F85149; margin-bottom: 10px; }
-    
-    img { border-bottom: 1px solid #30363D; transition: 0.3s; }
-    img:hover { opacity: 0.8; }
-    
-    .stButton>button { background: #1F6FEB; color: white; border: none; border-radius: 6px; font-weight: 600; width: 100%; transition: 0.2s; }
-    .stButton>button:hover { background: #388BFD; border-color: #8B949E; }
+    .stButton>button { background: #1F6FEB; color: white; border-radius: 6px; font-weight: 600; width: 100%; border: none; height: 45px; }
+    .stButton>button:hover { background: #388BFD; }
     </style>
 """, unsafe_allow_html=True)
 
-# --- 3. Intelligence Logic ---
+# --- 3. المحرك ---
 @st.cache_data(ttl=3600)
 def fetch_pro_news():
     try:
@@ -55,62 +43,48 @@ def fetch_pro_news():
         return r.get('articles', []) if r.get("status") == "ok" else []
     except: return []
 
-def ai_market_analysis(title):
+def ai_analysis(title):
     try:
         client = Groq(api_key=st.secrets["GROQ_API_KEY"].strip())
         chat = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
-            messages=[{"role": "user", "content": f"Analyze financial impact: {title}"}]
+            messages=[{"role": "user", "content": f"Analyze impact for investors: {title}"}]
         )
         return chat.choices[0].message.content
-    except: return "Analysis pending..."
+    except: return "Analysis stream stabilizing..."
 
-# --- 4. The Professional Experience ---
-
-# Header
+# --- 4. العرض ---
 st.markdown('<div class="main-header"><h1>TECH PULSE AI ⚡</h1><p>ADVANCED BI-DIRECTIONAL TECH INTELLIGENCE</p></div>', unsafe_allow_html=True)
 
 # Adsterra Top
 components.html('<div style="text-align:center;"><script type="text/javascript">atOptions = {"key" : "5f66cec17e51208142b62c4800c4705d","format" : "iframe","height" : 90,"width" : 728,"params" : {}};</script><script type="text/javascript" src="https://fugitivedepart.com/5f66cec17e51208142b62c4800c4705d/invoke.js"></script></div>', height=100)
 
-# Market Mood Section (كما في الصورة الواعرة)
-st.markdown("""
-<div class="market-mood">
-    <div class="mood-title">Market Mood: <span class="mood-bullish">🚀 BULLISH (Positive)</span></div>
-    <div style="background: #30363D; height: 8px; border-radius: 10px; margin-top: 15px;">
-        <div style="background: #1F6FEB; width: 75%; height: 100%; border-radius: 10px;"></div>
-    </div>
-</div>
-""", unsafe_allow_html=True)
+st.markdown('<div class="market-mood"><div style="font-size:20px;">Market Mood: <span class="mood-bullish">🚀 BULLISH (High Interest)</span></div></div>', unsafe_allow_html=True)
 
 articles = fetch_pro_news()
 
-if not articles:
-    st.info("📡 Scanning secure channels...")
-else:
+if articles:
     for i, art in enumerate(articles):
         with st.container():
             st.markdown('<div class="news-card">', unsafe_allow_html=True)
-            
-            # عرض الصورة بشكل احترافي
             if art.get('urlToImage'):
                 st.image(art['urlToImage'], use_container_width=True)
             
             st.markdown('<div class="news-content">', unsafe_allow_html=True)
-            st.markdown('<div class="risk-alert">RISK ALERT</div>', unsafe_allow_html=True)
+            st.markdown('<div class="risk-alert">INTEL UPDATE</div>', unsafe_allow_html=True)
             st.markdown(f'<div class="news-title">{art["title"]}</div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="news-meta">🌐 {art["source"]["name"]} | 📅 {art['publishedAt'][:10]}</div>', unsafe_allow_html=True)
             
-            col1, col2 = st.columns(2)
-            with col1:
+            c1, c2 = st.columns(2)
+            with c1:
                 if st.button(f"🧠 AI ANALYSIS", key=f"ai_{i}"):
-                    st.info(ai_market_analysis(art['title']))
-            with col2:
-                # بوطون تويتر المقتصد
-                if st.button(f"🚀 SHARE ON X", key=f"x_{i}"):
-                    st.success("Redirecting to X...")
+                    st.info(ai_analysis(art['title']))
+            with c2:
+                # --- الرابط السحري لنشر تويتر بدون الحاجة لـ API Key مدفوع ---
+                tweet_text = f"⚡ NEW INTEL: {art['title']}\n\n🔗 Deep Dive: {SITE_URL}"
+                tweet_url = f"https://twitter.com/intent/tweet?text={urllib.parse.quote(tweet_text)}"
+                st.markdown(f'<a href="{tweet_url}" target="_blank" style="text-decoration:none;"><div style="background-color:#1F6FEB; color:white; padding:10px; border-radius:6px; text-align:center; font-weight:600; height:25px;">🚀 SHARE ON X</div></a>', unsafe_allow_html=True)
             
             st.markdown('</div></div>', unsafe_allow_html=True)
 
 # Adsterra Bottom
-components.html('<div style="text-align:center; margin-top:30px;"><script type="text/javascript">atOptions = {"key" : "5f66cec17e51208142b62c4800c4705d","format" : "iframe","height" : 90,"width" : 728,"params" : {}};</script><script type="text/javascript" src="https://fugitivedepart.com/5f66cec17e51208142b62c4800c4705d/invoke.js"></script></div>', height=100)
+components.html('<div style="text-align:center; margin-top:20px;"><script type="text/javascript">atOptions = {"key" : "5f66cec17e51208142b62c4800c4705d","format" : "iframe","height" : 90,"width" : 728,"params" : {}};</script><script type="text/javascript" src="https://fugitivedepart.com/5f66cec17e51208142b62c4800c4705d/invoke.js"></script></div>', height=100)
