@@ -3,7 +3,6 @@ import requests
 from groq import Groq
 from textblob import TextBlob
 import urllib.parse
-import datetime
 import streamlit.components.v1 as components
 
 # ======================
@@ -12,7 +11,7 @@ import streamlit.components.v1 as components
 SITE_URL = "https://techpulse-global.streamlit.app/"
 PREVIEW_IMG = "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80"
 
-st.set_page_config(page_title="TechPulse AI 3.0 ⚡ Offline", layout="wide", page_icon="🤖")
+st.set_page_config(page_title="TechPulse AI 3.2 ⚡ Offline", layout="wide", page_icon="🤖")
 
 # ======================
 # 2️⃣ Flashy UI CSS
@@ -33,6 +32,7 @@ st.markdown("""
 @keyframes glow { 0% { box-shadow: 0 0 5px #00CCFF; } 50% { box-shadow: 0 0 20px #58A6FF; } 100% { box-shadow: 0 0 5px #00CCFF; } }
 .footer { text-align: center; padding: 40px; color: #8B949E; font-size: 13px; border-top: 1px solid #30363D; margin-top: 50px; }
 .footer a { color: #58A6FF; text-decoration: none; margin: 0 10px; }
+.market-mood { background: #0D1117; border-radius: 12px; padding: 12px; margin-bottom: 15px; font-weight:bold; text-align:center; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -49,7 +49,25 @@ if "ai_cache" not in st.session_state:
 DAILY_LIMIT = 5
 
 # ======================
-# 4️⃣ Fetch News
+# 4️⃣ Adsterra Top
+# ======================
+components.html('''
+<div style="text-align:center;">
+<script type="text/javascript">
+atOptions = {
+    "key" : "5f66cec17e51208142b62c4800c4705d",
+    "format" : "iframe",
+    "height" : 90,
+    "width" : 728,
+    "params" : {}
+};
+</script>
+<script type="text/javascript" src="https://fugitivedepart.com/5f66cec17e51208142b62c4800c4705d/invoke.js"></script>
+</div>
+''', height=100)
+
+# ======================
+# 5️⃣ Fetch News
 # ======================
 @st.cache_data(ttl=3600)
 def fetch_news():
@@ -62,7 +80,7 @@ def fetch_news():
         return []
 
 # ======================
-# 5️⃣ AI Analysis Function
+# 6️⃣ AI Analysis Function
 # ======================
 def ai_analyze(article_id, title):
     if article_id in st.session_state.ai_cache:
@@ -93,7 +111,19 @@ def ai_analyze(article_id, title):
     return result
 
 # ======================
-# 6️⃣ Display News
+# 7️⃣ Market Sentiment Function
+# ======================
+def get_sentiment_index(title):
+    polarity = TextBlob(title).sentiment.polarity
+    if polarity > 0.2:
+        return "🚀 BULLISH (+78%)", "#3FB950"
+    elif polarity < -0.2:
+        return "📉 BEARISH (-65%)", "#FF5555"
+    else:
+        return "⚖️ NEUTRAL (0%)", "#F0E68C"
+
+# ======================
+# 8️⃣ Display News
 # ======================
 st.markdown('<div class="main-header"><h1>TECH PULSE AI ⚡ Offline</h1><p>Global Intelligence</p></div>', unsafe_allow_html=True)
 
@@ -107,7 +137,13 @@ if articles:
                 st.image(art['urlToImage'], use_container_width=True)
             st.markdown(f"<div class='news-title'>{art['title']}</div>", unsafe_allow_html=True)
             st.write(f"🌐 {art['source']['name']} | 📅 {art.get('publishedAt', '2026-01-08')[:10]}")
-            c1, c2 = st.columns(2)
+            
+            # Market Sentiment
+            mood_text, mood_color = get_sentiment_index(art['title'])
+            st.markdown(f'<div class="market-mood" style="color:{mood_color}">Sentiment Index: {mood_text}</div>', unsafe_allow_html=True)
+            
+            # Buttons: AI Analysis + Share on X + Share on Facebook
+            c1, c2, c3 = st.columns([1,1,1])
             with c1:
                 if st.button(f"🧠 AI ANALYSIS", key=f"ai_{i}"):
                     analysis = ai_analyze(article_id, art['title'])
@@ -115,11 +151,40 @@ if articles:
             with c2:
                 t_text = f"⚡ INTEL: {art['title']}\n\n🔗 Report: {SITE_URL}"
                 t_url = f"https://twitter.com/intent/tweet?text={urllib.parse.quote(t_text)}"
-                st.markdown(f'<a href="{t_url}" target="_blank"><div style="background-color:#1F6FEB; color:white; padding:10px; border-radius:6px; text-align:center; font-weight:600;">🚀 SHARE ON X</div></a>', unsafe_allow_html=True)
+                st.markdown(f'''
+                    <a href="{t_url}" target="_blank">
+                        <div style="background-color:#1F6FEB; color:white; padding:10px; border-radius:6px; text-align:center; font-weight:600;">🚀 SHARE ON X</div>
+                    </a>
+                ''', unsafe_allow_html=True)
+            with c3:
+                fb_url = f"https://www.facebook.com/sharer/sharer.php?u={urllib.parse.quote(SITE_URL)}&quote={urllib.parse.quote(art['title'])}"
+                st.markdown(f'''
+                    <a href="{fb_url}" target="_blank">
+                        <div style="background-color:#3b5998; color:white; padding:10px; border-radius:6px; text-align:center; font-weight:600;">📘 SHARE ON FB</div>
+                    </a>
+                ''', unsafe_allow_html=True)
             st.markdown('</div>', unsafe_allow_html=True)
 
 # ======================
-# 7️⃣ Footer
+# 9️⃣ Adsterra Bottom
+# ======================
+components.html('''
+<div style="text-align:center; margin-top:20px;">
+<script type="text/javascript">
+atOptions = {
+    "key" : "5f66cec17e51208142b62c4800c4705d",
+    "format" : "iframe",
+    "height" : 90,
+    "width" : 728,
+    "params" : {}
+};
+</script>
+<script type="text/javascript" src="https://fugitivedepart.com/5f66cec17e51208142b62c4800c4705d/invoke.js"></script>
+</div>
+''', height=100)
+
+# ======================
+# 10️⃣ Footer
 # ======================
 st.markdown(f"""
 <div class="footer">
