@@ -4,7 +4,7 @@ from groq import Groq
 import tweepy
 import streamlit.components.v1 as components
 
-# --- 1. إعدادات SEO (ما نسينا والو) ---
+# --- 1. SEO & Core Settings ---
 SITE_URL = "https://techpulse-global.streamlit.app/"
 params = st.query_params
 
@@ -12,24 +12,42 @@ if "google8c04de4f0fa47f61" in str(params):
     st.write("google-site-verification: google8c04de4f0fa47f61.html"); st.stop()
 if "robots.txt" in str(params):
     st.text("User-agent: *\nDisallow: /_stcore/\nSitemap: " + SITE_URL + "sitemap.xml"); st.stop()
-if "sitemap.xml" in str(params):
-    st.write(f'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>{SITE_URL}</loc></url></urlset>', unsafe_allow_html=True); st.stop()
 
-# --- 2. الستايل النيوني (The Beast UI) ---
-st.set_page_config(page_title="TechPulse AI", layout="wide")
+# --- 2. Advanced UI Style (The Pro Look) ---
+st.set_page_config(page_title="TechPulse AI | Pro Intel", layout="wide", page_icon="⚡")
+
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap');
-    .stApp { background-color: #010409; color: #ffffff; }
-    .main-title { font-family: 'Orbitron', sans-serif; background: linear-gradient(90deg, #00CCFF, #d2a8ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 45px; text-align: center; font-weight: 900; padding: 20px; }
-    .news-box { border-bottom: 1px solid #1f2937; padding: 20px 0; margin-bottom: 10px; }
-    .stButton>button { background: linear-gradient(45deg, #00CCFF, #0066FF); color: white; border-radius: 8px; font-weight: bold; width: 100%; border: none; height: 45px; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Orbitron:wght@900&display=swap');
+    
+    .stApp { background-color: #010409; color: #E6EDF3; font-family: 'Inter', sans-serif; }
+    
+    .main-header { font-family: 'Orbitron', sans-serif; text-align: center; padding: 20px; }
+    .main-header h1 { color: #58A6FF; font-size: 48px; margin-bottom: 0; text-shadow: 0 0 15px rgba(88, 166, 255, 0.5); }
+    .main-header p { color: #8B949E; font-size: 14px; letter-spacing: 2px; }
+    
+    .market-mood { background: #0D1117; border-radius: 15px; padding: 20px; border: 1px solid #30363D; margin-bottom: 30px; }
+    .mood-title { font-size: 24px; font-weight: bold; }
+    .mood-bullish { color: #3FB950; }
+    
+    .news-card { background: #0D1117; border: 1px solid #30363D; border-radius: 12px; padding: 0; margin-bottom: 25px; overflow: hidden; }
+    .news-content { padding: 20px; }
+    .news-title { font-size: 22px; font-weight: bold; color: #F0F6FC; margin-bottom: 10px; line-height: 1.3; }
+    .news-meta { color: #8B949E; font-size: 13px; margin-bottom: 15px; }
+    
+    .risk-alert { display: inline-block; background: rgba(248, 81, 73, 0.1); color: #F85149; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; border: 1px solid #F85149; margin-bottom: 10px; }
+    
+    img { border-bottom: 1px solid #30363D; transition: 0.3s; }
+    img:hover { opacity: 0.8; }
+    
+    .stButton>button { background: #1F6FEB; color: white; border: none; border-radius: 6px; font-weight: 600; width: 100%; transition: 0.2s; }
+    .stButton>button:hover { background: #388BFD; border-color: #8B949E; }
     </style>
 """, unsafe_allow_html=True)
 
-# --- 3. المحرك (The Engine) ---
+# --- 3. Intelligence Logic ---
 @st.cache_data(ttl=3600)
-def fetch_intel():
+def fetch_pro_news():
     try:
         api_key = st.secrets["NEWS_API_KEY"].strip()
         url = f'https://newsapi.org/v2/top-headlines?category=technology&language=en&pageSize=5&apiKey={api_key}'
@@ -37,44 +55,62 @@ def fetch_intel():
         return r.get('articles', []) if r.get("status") == "ok" else []
     except: return []
 
-def post_to_x(title):
+def ai_market_analysis(title):
     try:
-        client = tweepy.Client(
-            consumer_key=st.secrets["X_API_KEY"].strip(), consumer_secret=st.secrets["X_API_SECRET"].strip(),
-            access_token=st.secrets["X_ACCESS_TOKEN"].strip(), access_token_secret=st.secrets["X_ACCESS_SECRET"].strip()
+        client = Groq(api_key=st.secrets["GROQ_API_KEY"].strip())
+        chat = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": f"Analyze financial impact: {title}"}]
         )
-        client.create_tweet(text=f"⚡ NEW INTEL: {title[:160]}...\n\n🔗 Analysis: {SITE_URL}\n\n#AI #Tech")
-        return True
-    except: return False
+        return chat.choices[0].message.content
+    except: return "Analysis pending..."
 
-# --- 4. العرض (The Delivery) ---
-st.markdown('<div class="main-title">TECH PULSE AI ⚡</div>', unsafe_allow_html=True)
+# --- 4. The Professional Experience ---
 
-# الإعلان العلوي
+# Header
+st.markdown('<div class="main-header"><h1>TECH PULSE AI ⚡</h1><p>ADVANCED BI-DIRECTIONAL TECH INTELLIGENCE</p></div>', unsafe_allow_html=True)
+
+# Adsterra Top
 components.html('<div style="text-align:center;"><script type="text/javascript">atOptions = {"key" : "5f66cec17e51208142b62c4800c4705d","format" : "iframe","height" : 90,"width" : 728,"params" : {}};</script><script type="text/javascript" src="https://fugitivedepart.com/5f66cec17e51208142b62c4800c4705d/invoke.js"></script></div>', height=100)
 
-articles = fetch_intel()
+# Market Mood Section (كما في الصورة الواعرة)
+st.markdown("""
+<div class="market-mood">
+    <div class="mood-title">Market Mood: <span class="mood-bullish">🚀 BULLISH (Positive)</span></div>
+    <div style="background: #30363D; height: 8px; border-radius: 10px; margin-top: 15px;">
+        <div style="background: #1F6FEB; width: 75%; height: 100%; border-radius: 10px;"></div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
-# الأتمتة
-if "auto_post" in str(params) and articles:
-    post_to_x(articles[0]['title'])
+articles = fetch_pro_news()
 
 if not articles:
-    st.warning("📡 Scanning quantum frequencies... News will appear here shortly.")
+    st.info("📡 Scanning secure channels...")
 else:
     for i, art in enumerate(articles):
-        # عرض العنوان بوضوح كبير
-        st.markdown(f"### 🛡️ {art['title']}")
-        st.write(f"🌐 {art['source']['name']} | 📅 {art['publishedAt'][:10]}")
-        
-        c1, c2 = st.columns(2)
-        with c1:
-            if st.button(f"🧠 AI ANALYSIS", key=f"ai_{i}"):
-                st.info("Analyzing this trend for investors...")
-        with c2:
-            if st.button(f"🚀 SHARE ON X", key=f"x_{i}"):
-                if post_to_x(art['title']): st.success("Shared!")
-        st.markdown("---")
+        with st.container():
+            st.markdown('<div class="news-card">', unsafe_allow_html=True)
+            
+            # عرض الصورة بشكل احترافي
+            if art.get('urlToImage'):
+                st.image(art['urlToImage'], use_container_width=True)
+            
+            st.markdown('<div class="news-content">', unsafe_allow_html=True)
+            st.markdown('<div class="risk-alert">RISK ALERT</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="news-title">{art["title"]}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="news-meta">🌐 {art["source"]["name"]} | 📅 {art['publishedAt'][:10]}</div>', unsafe_allow_html=True)
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button(f"🧠 AI ANALYSIS", key=f"ai_{i}"):
+                    st.info(ai_market_analysis(art['title']))
+            with col2:
+                # بوطون تويتر المقتصد
+                if st.button(f"🚀 SHARE ON X", key=f"x_{i}"):
+                    st.success("Redirecting to X...")
+            
+            st.markdown('</div></div>', unsafe_allow_html=True)
 
-# الإعلان السفلي
-components.html('<div style="text-align:center; margin-top:20px;"><script type="text/javascript">atOptions = {"key" : "5f66cec17e51208142b62c4800c4705d","format" : "iframe","height" : 90,"width" : 728,"params" : {}};</script><script type="text/javascript" src="https://fugitivedepart.com/5f66cec17e51208142b62c4800c4705d/invoke.js"></script></div>', height=100)
+# Adsterra Bottom
+components.html('<div style="text-align:center; margin-top:30px;"><script type="text/javascript">atOptions = {"key" : "5f66cec17e51208142b62c4800c4705d","format" : "iframe","height" : 90,"width" : 728,"params" : {}};</script><script type="text/javascript" src="https://fugitivedepart.com/5f66cec17e51208142b62c4800c4705d/invoke.js"></script></div>', height=100)
