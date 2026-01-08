@@ -1,29 +1,21 @@
 import streamlit as st
 import requests
 from groq import Groq
-from supabase import create_client, Client
-import datetime
-import urllib.parse
 from textblob import TextBlob
+import urllib.parse
+import datetime
 import streamlit.components.v1 as components
 
 # ======================
-# 1️⃣ Supabase Setup
-# ======================
-url: str = st.secrets["SUPABASE_URL"]
-key: str = st.secrets["SUPABASE_KEY"]
-supabase: Client = create_client(url, key)
-
-# ======================
-# 2️⃣ Site Config & SEO
+# 1️⃣ Site Config & SEO
 # ======================
 SITE_URL = "https://techpulse-global.streamlit.app/"
 PREVIEW_IMG = "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80"
 
-st.set_page_config(page_title="TechPulse AI 3.0 ⚡", layout="wide", page_icon="🤖")
+st.set_page_config(page_title="TechPulse AI 3.0 ⚡ Offline", layout="wide", page_icon="🤖")
 
 # ======================
-# 3️⃣ UI Styles + Flashy Animations
+# 2️⃣ Flashy UI CSS
 # ======================
 st.markdown("""
 <style>
@@ -38,46 +30,26 @@ st.markdown("""
 .news-title:hover { color: #FFDD00; }
 .stButton>button { background: linear-gradient(90deg, #1F6FEB, #00CCFF) !important; color: white !important; border-radius: 12px !important; border: none !important; width: 100% !important; font-weight: 700; transition: 0.3s; animation: glow 2s infinite; }
 .stButton>button:hover { background: linear-gradient(90deg, #FFDD00, #FFAA00) !important; color: black !important; transform: scale(1.05) rotate(-1deg); }
-@keyframes glow {
-  0% { box-shadow: 0 0 5px #00CCFF; }
-  50% { box-shadow: 0 0 20px #58A6FF; }
-  100% { box-shadow: 0 0 5px #00CCFF; }
-}
+@keyframes glow { 0% { box-shadow: 0 0 5px #00CCFF; } 50% { box-shadow: 0 0 20px #58A6FF; } 100% { box-shadow: 0 0 5px #00CCFF; } }
 .footer { text-align: center; padding: 40px; color: #8B949E; font-size: 13px; border-top: 1px solid #30363D; margin-top: 50px; }
 .footer a { color: #58A6FF; text-decoration: none; margin: 0 10px; }
 </style>
 """, unsafe_allow_html=True)
 
 # ======================
-# 4️⃣ Admin Dashboard (Sidebar)
+# 3️⃣ Session State Initialization
 # ======================
-st.sidebar.title("📊 Admin Dashboard")
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+if "api_calls" not in st.session_state:
+    st.session_state.api_calls = 0
+if "ai_cache" not in st.session_state:
+    st.session_state.ai_cache = {}
 
-def get_api_calls_today():
-    today = datetime.date.today().isoformat()
-    res = supabase.table("ai_usage_log").select("*").eq("date", today).execute()
-    if res.data:
-        return res.data[0]['calls_count']
-    return 0
-
-def increment_api_call():
-    today = datetime.date.today().isoformat()
-    res = supabase.table("ai_usage_log").select("*").eq("date", today).execute()
-    if res.data:
-        supabase.table("ai_usage_log").update({"calls_count": res.data[0]['calls_count']+1}).eq("date", today).execute()
-    else:
-        supabase.table("ai_usage_log").insert({"date": today, "calls_count": 1}).execute()
-
-calls_today = get_api_calls_today()
-st.sidebar.metric("AI Calls Today", calls_today, delta=5-calls_today)
-
-top_articles = supabase.table("ai_analysis").select("*").order("timestamp", desc=True).limit(5).execute()
-st.sidebar.subheader("Last 5 AI Analyses")
-for a in top_articles.data:
-    st.sidebar.write(f"- {a['article_id']}: {a['analysis'][:50]}...")
+DAILY_LIMIT = 5
 
 # ======================
-# 5️⃣ Fetch News
+# 4️⃣ Fetch News
 # ======================
 @st.cache_data(ttl=3600)
 def fetch_news():
@@ -90,40 +62,40 @@ def fetch_news():
         return []
 
 # ======================
-# 6️⃣ AI Analysis Function
+# 5️⃣ AI Analysis Function
 # ======================
 def ai_analyze(article_id, title):
-    res = supabase.table("ai_analysis").select("*").eq("article_id", article_id).execute()
-    if res.data:
-        return res.data[0]['analysis']
-    
-    if get_api_calls_today() >= 5:
-        return "⚠️ Daily AI limit reached. Come back tomorrow or check previous analyses."
-    
+    if article_id in st.session_state.ai_cache:
+        return st.session_state.ai_cache[article_id]
+
+    if st.session_state.api_calls >= DAILY_LIMIT:
+        return "⚠️ Daily AI limit reached. Come back tomorrow or refresh session."
+
     client = Groq(api_key=st.secrets["GROQ_API_KEY"].strip())
-    chat = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=[{"role": "user", "content": f"Quick analysis for investors: {title}"}]
-    )
-    result = chat.choices[0].message.content
-    
+    try:
+        chat = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": f"Quick analysis for investors: {title}"}]
+        )
+        result = chat.choices[0].message.content
+    except:
+        result = "AI temporarily unavailable. Try again later."
+
+    # Sentiment Analysis
     sentiment = TextBlob(title).sentiment.polarity
     sentiment_tag = "📈 Positive" if sentiment > 0 else ("📉 Negative" if sentiment < 0 else "⚖️ Neutral")
     result = f"{result}\n\nSentiment: {sentiment_tag}"
-    
-    supabase.table("ai_analysis").insert({
-        "article_id": article_id,
-        "analysis": result,
-        "timestamp": datetime.datetime.now().isoformat()
-    }).execute()
-    
-    increment_api_call()
+
+    # Cache & Increment API count
+    st.session_state.ai_cache[article_id] = result
+    st.session_state.api_calls += 1
+
     return result
 
 # ======================
-# 7️⃣ Display News
+# 6️⃣ Display News
 # ======================
-st.markdown('<div class="main-header"><h1>TECH PULSE AI ⚡ 3.0</h1><p>Global Intelligence - Ultimate Flashy Edition</p></div>', unsafe_allow_html=True)
+st.markdown('<div class="main-header"><h1>TECH PULSE AI ⚡ Offline</h1><p>Global Intelligence</p></div>', unsafe_allow_html=True)
 
 articles = fetch_news()
 if articles:
@@ -147,7 +119,7 @@ if articles:
             st.markdown('</div>', unsafe_allow_html=True)
 
 # ======================
-# 8️⃣ Footer
+# 7️⃣ Footer
 # ======================
 st.markdown(f"""
 <div class="footer">
